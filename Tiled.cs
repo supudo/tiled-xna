@@ -24,7 +24,7 @@ Copyright (C) 2009 Kevin Gadd
  * Updates by Stephen Belanger - July, 13 2009
  * 
  * -added ProhibitDtd = false, so you don't need to remove the doctype line after each time you edit the map.
- * -changed everything to use SortedLists for easier referencing
+ * -changed everything to use SortedDictionarys for easier referencing
  * -added objectgroups
  * -added movable and resizable objects
  * -added object images
@@ -179,7 +179,7 @@ namespace Squared.Tiled {
         internal const byte VerticalFlipDrawFlag = 2;
         internal const byte DiagonallyFlipDrawFlag = 4;
 
-        public SortedList<string, string> Properties = new SortedList<string, string>();
+        public SortedDictionary<string, string> Properties = new SortedDictionary<string, string>();
         internal struct TileInfo
         {
             public Texture2D Texture;
@@ -481,8 +481,8 @@ namespace Squared.Tiled {
 
     public class ObjectGroup
     {
-        public SortedList<string, Object> Objects = new SortedList<string, Object>();
-        public SortedList<string, string> Properties = new SortedList<string, string>();
+        public SortedDictionary<string, Object> Objects = new SortedDictionary<string, Object>();
+        public SortedDictionary<string, string> Properties = new SortedDictionary<string, string>();
 
         public string Name;
         public int Width, Height, X, Y;
@@ -585,7 +585,7 @@ namespace Squared.Tiled {
 
     public class Object
     {
-        public SortedList<string, string> Properties = new SortedList<string, string>();
+        public SortedDictionary<string, string> Properties = new SortedDictionary<string, string>();
 
         public string Name, Image;
         public int Width, Height, X, Y;
@@ -698,19 +698,21 @@ namespace Squared.Tiled {
 
     public class Map
     {
-        public SortedList<string, Tileset> Tilesets = new SortedList<string, Tileset>();
-        public SortedList<string, Layer> Layers = new SortedList<string, Layer>();
-        public SortedList<string, ObjectGroup> ObjectGroups = new SortedList<string, ObjectGroup>();
-        public SortedList<string, string> Properties = new SortedList<string, string>();
+        public SortedDictionary<string, Tileset> Tilesets = new SortedDictionary<string, Tileset>();
+        public SortedDictionary<string, Layer> Layers = new SortedDictionary<string, Layer>();
+        public SortedDictionary<string, ObjectGroup> ObjectGroups = new SortedDictionary<string, ObjectGroup>();
+        public SortedDictionary<string, string> Properties = new SortedDictionary<string, string>();
         public int Width, Height;
         public int TileWidth, TileHeight;
 
         public static Map Load (string filename, ContentManager content) {
             var result = new Map();
                 XmlReaderSettings settings = new XmlReaderSettings();
-                settings.ProhibitDtd = false;
+                // Windows Phone / Visual Studio 2012 / supudo@gmail.com
+                ///~settings.ProhibitDtd = false;
 
-                using (var stream = System.IO.File.OpenText(filename))
+                //using (var stream = System.IO.File.OpenText(filename))
+                using (var stream = System.Windows.Application.GetResourceStream(new Uri(filename, UriKind.Relative)).Stream)
                 using (var reader = XmlReader.Create(stream, settings))
                     while (reader.Read())
                     {
@@ -799,9 +801,11 @@ namespace Squared.Tiled {
 
             foreach (var tileset in result.Tilesets.Values)
             {
-                tileset.Texture = content.Load<Texture2D>(
-                    Path.Combine(Path.GetDirectoryName(tileset.Image), Path.GetFileNameWithoutExtension(tileset.Image))
-                );
+                // Windows Phone / Visual Studio 2012 / supudo@gmail.com
+                ///~tileset.Texture = content.Load<Texture2D>(
+                ///~    Path.Combine(Path.GetDirectoryName(tileset.Image), Path.GetFileNameWithoutExtension(tileset.Image))
+                ///~);
+                tileset.Texture = content.Load<Texture2D>(tileset.Image);
             }
 
             foreach (var objects in result.ObjectGroups.Values)
@@ -828,7 +832,7 @@ namespace Squared.Tiled {
         public void Draw (SpriteBatch batch, Rectangle rectangle, Vector2 viewportPosition) {
             foreach (Layer layers in Layers.Values)
             {
-                layers.Draw(batch, Tilesets.Values, rectangle, viewportPosition, TileWidth, TileHeight);
+                layers.Draw(batch, Tilesets.Values.ToList(), rectangle, viewportPosition, TileWidth, TileHeight);
             }
 
             foreach (var objectgroups in ObjectGroups.Values)
